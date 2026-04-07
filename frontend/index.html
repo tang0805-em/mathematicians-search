@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数学家关系网络 - 追踪数学史</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .header {
+            color: white;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .search-box {
+            margin-bottom: 20px;
+        }
+        
+        .search-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input-wrapper input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .search-input-wrapper button {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .search-input-wrapper button:hover {
+            background: #764ba2;
+        }
+        
+        .search-results {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .search-results li {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f5f5f5;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 3px solid #667eea;
+        }
+        
+        .search-results li:hover {
+            background: #efefef;
+        }
+        
+        .search-results li .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-avatar {
+            width: 42px;
+            height: 56px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            background: #eef2ff;
+        }
+
+        .result-meta {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-results li .info {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .mathematician-details {
+            background: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .detail-portrait {
+            width: 140px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 10px auto 12px;
+            display: block;
+            border: 2px solid #667eea;
+            background: #eef2ff;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.18);
+        }
+        
+        .mathematician-details h2 {
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .detail-item {
+            margin-bottom: 15px;
+        }
+        
+        .detail-item label {
+            font-weight: 600;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .detail-item .value {
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        
+        .related-items {
+            margin: 15px 0;
+        }
+        
+        .related-items h4 {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .related-items.teachers h4 {
+            color: #ff9800;
+            border-left: 3px solid #ff9800;
+            padding-left: 8px;
+        }
+        
+        .related-items.students h4 {
+            color: #2196f3;
+            border-left: 3px solid #2196f3;
+            padding-left: 8px;
+        }
+        
+        .related-items.collaborators h4 {
+            color: #9c27b0;
+            border-left: 3px solid #9c27b0;
+            padding-left: 8px;
+        }
+        
+        .related-item {
+            padding: 8px 12px;
+            background: #e8f0ff;
+            border-radius: 3px;
+            margin-bottom: 5px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 3px solid #667eea;
+        }
+        
+        .related-item.teacher {
+            background: linear-gradient(90deg, #fff4e6 0%, #ffe7cc 100%);
+            border-left-color: #ff9800;
+        }
+        
+        .related-item.student {
+            background: linear-gradient(90deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left-color: #2196f3;
+        }
+        
+        .related-item.collaborator {
+            background: linear-gradient(90deg, #f3e5f5 0%, #e1bee7 100%);
+            border-left-color: #9c27b0;
+        }
+        
+        .related-item-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 6px;
+            color: white;
+        }
+        
+        .related-item.teacher .related-item-badge {
+            background: #ff9800;
+        }
+        
+        .related-item.student .related-item-badge {
+            background: #2196f3;
+        }
+        
+        .related-item.collaborator .related-item-badge {
+            background: #9c27b0;
+        }
+        
+        .related-item:hover {
+            background: #d8e4ff;
+        }
+        
+        .network-panel {
+            flex: 1;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        #network-graph {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            cursor: pointer;
+            stroke: white;
+            stroke-width: 2px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        
+        .node-center {
+            fill: #667eea;
+        }
+        
+        .node-related {
+            fill: #764ba2;
+        }
+        
+        .node-label {
+            font-size: 12px;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: white;
+            font-weight: bold;
+        }
+        
+        .edge-label {
+            font-size: 10px;
+            fill: #666;
+            text-anchor: middle;
+            pointer-events: none;
+            background: white;
+            padding: 2px 4px;
+        }
+        
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .link.teacher-student {
+            stroke: #ff9800;
+            stroke-width: 2.5;
+            stroke-opacity: 0.8;
+            marker-end: url(#arrowhead-orange);
+        }
+        
+        .link.collaboration {
+            stroke: #9c27b0;
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            stroke-opacity: 0.6;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 200px;
+            word-wrap: break-word;
+        }
+        
+        .no-selection {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 40%;
+                border-right: none;
+                border-bottom: 2px solid #ccc;
+            }
+            
+            .main-panel {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" placeholder="搜索数学家名字...">
+                    <button onclick="search()">搜索</button>
+                </div>
+            </div>
+            
+            <ul class="search-results" id="searchResults"></ul>
+            
+            <div id="details"></div>
+        </div>
+        
+        <!-- 右侧显示区 -->
+        <div class="main-panel">
+            <div class="header">
+                <h1>🧮 数学家关系网络</h1>
+                <p>探索数学史上的师承、合作与学派关系</p>
+            </div>
+            <div class="network-panel">
+                <svg id="network-graph"></svg>
+                <div class="no-selection" id="noSelection">
+                    搜索一位数学家，查看他的师承和学生关系
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        let currentMathematician = null;
+        let networkVisualization = null;
+        
+        // 创建备用头像 - 必须在最前面定义，全局可用
+        function createFallbackPortrait(name) {
+            const safeName = (name || '数学家').replace(/[<>&]/g, '');
+            const initials = safeName.trim().charAt(0) || '数';
+            const uniqueId = `bg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="280" height="360" viewBox="0 0 280 360">
+                    <defs>
+                        <linearGradient id="${uniqueId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="280" height="360" rx="24" fill="url(#${uniqueId})"/>
+                    <circle cx="140" cy="120" r="54" fill="rgba(255,255,255,0.92)"/>
+                    <path d="M80 250c0-38 27-64 60-64s60 26 60 64" fill="rgba(255,255,255,0.92)"/>
+                    <circle cx="140" cy="110" r="8" fill="#667eea"/>
+                    <circle cx="124" cy="126" r="8" fill="#667eea"/>
+                    <circle cx="156" cy="126" r="8" fill="#667eea"/>
+                    <text x="140" y="308" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="22" font-weight="700" fill="white">${safeName}</text>
+                    <text x="140" y="190" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="54" font-weight="800" fill="#667eea">${initials}</text>
+                </svg>
+            `;
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+        }
+        
+        // 搜索功能
+        async function search() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('请输入要搜索的数学家名字');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    throw new Error(`搜索失败: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                const resultsList = document.getElementById('searchResults');
+                resultsList.innerHTML = '';
+                
+                if (data.error) {
+                    resultsList.innerHTML = `<li style="text-align: center; color: red; padding: 10px;">${data.error}</li>`;
+                    return;
+                }
+                
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(math => {
+                        const li = document.createElement('li');
+                        // 直接使用备用头像，不再尝试加载外部图片
+                        const portraitUrl = createFallbackPortrait(math.name);
+                        li.innerHTML = `
+                            <img class="result-avatar" src="${portraitUrl}" alt="${math.name}">
+                            <div class="result-meta">
+                                <div class="name">${math.name}</div>
+                                <div class="info">${math.birth_year || '?'} - ${math.death_year || '活跃中'} | ${math.country}</div>
+                                <div class="info">${math.field || '数学'}</div>
+                            </div>
+                        `;
+                        li.onclick = () => selectMathematician(math.id);
+                        resultsList.appendChild(li);
+                    });
+                } else {
+                    resultsList.innerHTML = '<li style="text-align: center; color: #999; padding: 10px;">未找到匹配的数学家</li>';
+                }
+            } catch (error) {
+                console.error('搜索错误:', error);
+                const resultsList = document.getElementById('searchResults');
+                resultsList.innerHTML = `<li style="text-align: center; color: red; padding: 10px;">❌ 搜索出错：${error.message}<br><small>请检查后端服务是否运行在 http://localhost:5000</small></li>`;
+            }
+        }
+        
+        // 选择数学家并显示详情
+        async function selectMathematician(id) {
+            try {
+                const response = await fetch(`${API_BASE}/mathematician/${id}`);
+                if (!response.ok) {
+                    throw new Error(`获取失败: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('错误:', data.error);
+                    document.getElementById('details').innerHTML = `<div style="color: red; padding: 10px;">❌ ${data.error}</div>`;
+                    return;
+                }
+                
+                currentMathematician = data;
+                displayDetails(data);
+                displayRelationshipGraph(id);
+            } catch (error) {
+                console.error('获取详情错误:', error);
+                document.getElementById('details').innerHTML = `<div style="color: red; padding: 10px;">❌ 获取详情失败：${error.message}</div>`;
+            }
+        }
+        
+        // 显示详细信息
+        function displayDetails(math) {
+            const detailsDiv = document.getElementById('details');
+            
+            let html = `
+                <div class="mathematician-details">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <h2>${math.name}</h2>
+            `;
+            
+            // 显示照片；直接使用备用头像，避免外部图片加载问题
+            const portraitUrl = createFallbackPortrait(math.name);
+            html += `
+                        <img class="detail-portrait" src="${portraitUrl}" alt="${math.name}">
+            `;
+            
+            html += `
+                    </div>
+                    <div class="detail-item">
+                        <label>生卒年份</label>
+                        <div class="value">${math.birth_year || '?'} - ${math.death_year || '活跃中'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>国家/地区</label>
+                        <div class="value">${math.country || '未知'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>研究领域</label>
+                        <div class="value">${math.field || '数学'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <label>主要成就</label>
+                        <div class="value">${math.achievements || '未记录'}</div>
+                    </div>
+            `;
+            
+            if (math.teachers && math.teachers.length > 0) {
+                html += `<div class="related-items teachers">
+                    <h4>📚 师 父</h4>
+                    ${math.teachers.map(t => `
+                        <div class="related-item teacher" onclick="selectMathematician(${t.id})">
+                            <span class="related-item-badge">导师</span>
+                            ${t.name} (${t.birth_year}-${t.death_year})
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+            
+            if (math.students && math.students.length > 0) {
+                html += `<div class="related-items students">
+                    <h4>🎓 弟 子</h4>
+                    ${math.students.map(s => `
+                        <div class="related-item student" onclick="selectMathematician(${s.id})">
+                            <span class="related-item-badge">学生</span>
+                            ${s.name} (${s.birth_year}-${s.death_year})
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+            
+            if (math.collaborators && math.collaborators.length > 0) {
+                html += `<div class="related-items collaborators">
+                    <h4>🤝 合作者</h4>
+                    ${math.collaborators.map(c => `
+                        <div class="related-item collaborator" onclick="selectMathematician(${c.id})">
+                            <span class="related-item-badge">同事</span>
+                            ${c.name} (${c.birth_year}-${c.death_year})
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
+            
+            html += `</div>`;
+            detailsDiv.innerHTML = html;
+        }
+        
+        // 显示关系图
+        async function displayRelationshipGraph(id) {
+            try {
+                const response = await fetch(`${API_BASE}/relationship-graph/${id}`);
+                if (!response.ok) {
+                    throw new Error(`获取失败: ${response.status}`);
+                }
+                const graphData = await response.json();
+                
+                if (graphData.error) {
+                    console.error('错误:', graphData.error);
+                    document.getElementById('noSelection').innerHTML = `<div style="color: red;">❌ 关系图加载失败<br>${graphData.error}</div>`;
+                    document.getElementById('noSelection').style.display = 'flex';
+                    return;
+                }
+                
+                document.getElementById('noSelection').style.display = 'none';
+                visualizeGraph(graphData);
+            } catch (error) {
+                console.error('获取关系图错误:', error);
+                const noSelection = document.getElementById('noSelection');
+                noSelection.style.display = 'flex';
+                noSelection.innerHTML = `<div style="color: red;">❌ 网络请求失败<br><small>${error.message}</small><br><small>请检查后端是否运行在 http://localhost:5000</small></div>`;
+            }
+        }
+        
+        // D3.js 图表可视化
+        function visualizeGraph(data) {
+            const container = document.getElementById('network-graph').parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            console.log('可视化数据:', data);
+            
+            // 清空之前的内容
+            const svgSelection = d3.select('#network-graph');
+            svgSelection.selectAll("*").remove();
+            svgSelection.attr('width', width).attr('height', height);
+            
+            // 检查数据有效性
+            if (!data.nodes || data.nodes.length === 0) {
+                console.warn('没有节点数据', data);
+                document.getElementById('noSelection').style.display = 'flex';
+                document.getElementById('noSelection').textContent = '没有关系数据要显示';
+                return;
+            }
+            
+            // 计算每个节点的连接数量，用于动态大小
+            const nodeDegree = {};
+            data.nodes.forEach(node => {
+                nodeDegree[node.id] = 0;
+            });
+            
+            data.links.forEach(link => {
+                const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                if (nodeDegree[sourceId] !== undefined) nodeDegree[sourceId]++;
+                if (nodeDegree[targetId] !== undefined) nodeDegree[targetId]++;
+            });
+            
+            // 计算节点半径：根据连接数量 + 类型
+            const calculateRadius = (d) => {
+                const baseDegreeRadius = Math.sqrt(nodeDegree[d.id] || 0) * 3 + 10;
+                if (d.type === 'center') {
+                    return Math.max(28, baseDegreeRadius + 8);  // 中心节点更大
+                } else {
+                    return Math.max(14, baseDegreeRadius);
+                }
+            };
+            
+            const simulation = d3.forceSimulation(data.nodes)
+                .force('link', d3.forceLink(data.links || []).id(d => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide(d => calculateRadius(d) + 5));
+            
+            const g = d3.select('#network-graph')
+                .attr('width', width)
+                .attr('height', height)
+                .append('g');
+            
+            // 添加背景
+            g.append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', '#fafafa');
+            
+            // 添加箭头定义
+            const defs = g.append('defs');
+            defs.append('marker')
+                .attr('id', 'arrowhead-orange')
+                .attr('markerWidth', 10)
+                .attr('markerHeight', 10)
+                .attr('refX', 9)
+                .attr('refY', 3)
+                .attr('orient', 'auto')
+                .append('polygon')
+                .attr('points', '0 0, 10 3, 0 6')
+                .attr('fill', '#ff9800');
+            
+            // 添加链接
+            const links = g.selectAll('line')
+                .data(data.links)
+                .enter()
+                .append('line')
+                .attr('class', d => {
+                    if (d.type === 'teacher' || d.type === 'student') {
+                        return 'link teacher-student';
+                    } else if (d.type === 'collaboration') {
+                        return 'link collaboration';
+                    }
+                    return 'link';
+                })
+                .attr('stroke-width', 2);
+            
+            // 添加关系标签（在边上）
+            const edgeLabels = g.selectAll('.edge-label')
+                .data(data.links)
+                .enter()
+                .append('text')
+                .attr('class', 'edge-label')
+                .attr('font-size', '11px')
+                .attr('font-weight', 'bold')
+                .attr('fill', d => {
+                    if (d.type === 'teacher' || d.type === 'student') {
+                        return '#ff9800';
+                    } else if (d.type === 'collaboration') {
+                        return '#9c27b0';
+                    }
+                    return '#666';
+                })
+                .attr('text-anchor', 'middle')
+                .attr('pointer-events', 'none')
+                .text(d => {
+                    // 根据link的type显示关系标签
+                    if (d.type === 'teacher') {
+                        return '→ 教 →';
+                    } else if (d.type === 'student') {
+                        return '← 学 ←';
+                    } else if (d.type === 'collaboration') {
+                        return '◆ 合 ◆';
+                    } else if (d.type === 'colleague') {
+                        return '= 同 =';
+                    }
+                    return 'd.type';
+                });
+            
+            // 添加节点
+            const nodes = g.selectAll('circle')
+                .data(data.nodes)
+                .enter()
+                .append('circle')
+                .attr('class', d => `node node-${d.type}`)
+                .attr('r', d => calculateRadius(d))
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', dragged)
+                    .on('end', dragEnded));
+            
+            // 添加标签背景（矩形）
+            const labelBackgrounds = g.selectAll('rect.label-bg')
+                .data(data.nodes)
+                .enter()
+                .append('rect')
+                .attr('class', 'label-bg')
+                .attr('fill', 'rgba(0, 0, 0, 0.6)')
+                .attr('rx', 4)
+                .attr('ry', 4)
+                .attr('pointer-events', 'none');
+            
+            // 添加标签
+            const labels = g.selectAll('text.node-label')
+                .data(data.nodes)
+                .enter()
+                .append('text')
+                .attr('class', 'node-label')
+                .attr('font-size', d => d.type === 'center' ? 18 : 14)
+                .attr('font-weight', 'bold')
+                .attr('fill', 'white')
+                .text(d => {
+                    // 显示完整名字或截断较长的
+                    const name = d.name;
+                    return name.length > 6 ? name.substring(0, 6) + '...' : name;
+                })
+                .attr('pointer-events', 'none')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '0.3em');
+            
+            // 更新位置
+            simulation.on('tick', () => {
+                links
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+                
+                // 更新边标签位置（在链接中点）
+                edgeLabels
+                    .attr('x', d => (d.source.x + d.target.x) / 2)
+                    .attr('y', d => (d.source.y + d.target.y) / 2);
+                
+                nodes
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                
+                // 更新标签背景位置和大小
+                labelBackgrounds
+                    .attr('x', d => d.x - (d.type === 'center' ? 35 : 30))
+                    .attr('y', d => d.y - (d.type === 'center' ? 13 : 10))
+                    .attr('width', d => d.type === 'center' ? 70 : 60)
+                    .attr('height', d => d.type === 'center' ? 26 : 20);
+                
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+            
+            // 拖拽功能
+            function dragStarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+            
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+            
+            function dragEnded(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        }
+        
+        // 回车键搜索
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') search();
+        });
+    </script>
+</body>
+</html>

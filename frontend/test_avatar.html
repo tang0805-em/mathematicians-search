@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试头像显示</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+
+        .test-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .test-item {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f9f9f9;
+            text-align: center;
+        }
+
+        .avatar-container {
+            width: 140px;
+            height: 180px;
+            margin: 10px auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.18);
+        }
+
+        .avatar-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .math-name {
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 数学家头像显示测试</h1>
+        <p>测试备用头像生成功能</p>
+
+        <div class="test-results" id="testResults"></div>
+    </div>
+
+    <script>
+        // 创建备用头像函数（与主页面相同）
+        function createFallbackPortrait(name) {
+            const safeName = (name || '数学家').replace(/[<>&]/g, '');
+            const initials = safeName.trim().charAt(0) || '数';
+            const uniqueId = `bg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="280" height="360" viewBox="0 0 280 360">
+                    <defs>
+                        <linearGradient id="${uniqueId}" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#667eea"/>
+                            <stop offset="100%" stop-color="#764ba2"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="280" height="360" rx="24" fill="url(#${uniqueId})"/>
+                    <circle cx="140" cy="120" r="54" fill="rgba(255,255,255,0.92)"/>
+                    <path d="M80 250c0-38 27-64 60-64s60 26 60 64" fill="rgba(255,255,255,0.92)"/>
+                    <circle cx="140" cy="110" r="8" fill="#667eea"/>
+                    <circle cx="124" cy="126" r="8" fill="#667eea"/>
+                    <circle cx="156" cy="126" r="8" fill="#667eea"/>
+                    <text x="140" y="308" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="22" font-weight="700" fill="white">${safeName}</text>
+                    <text x="140" y="190" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="54" font-weight="800" fill="#667eea">${initials}</text>
+                </svg>
+            `;
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+        }
+
+        // 测试数学家列表
+        const testMathematicians = [
+            '欧拉', '高斯', '牛顿', '黎曼', '柯西', '华罗庚', '陈景润', '丘成桐'
+        ];
+
+        // 运行测试
+        const testResultsDiv = document.getElementById('testResults');
+
+        testMathematicians.forEach((name, index) => {
+            const portraitUrl = createFallbackPortrait(name);
+
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item';
+
+            const avatarContainer = document.createElement('div');
+            avatarContainer.className = 'avatar-container';
+
+            const img = document.createElement('img');
+            img.src = portraitUrl;
+            img.alt = name;
+
+            // 监听图片加载事件
+            img.onload = function() {
+                statusDiv.textContent = '✓ 显示成功';
+                statusDiv.className = 'status success';
+                console.log(`✓ ${name} 头像显示成功`);
+            };
+
+            img.onerror = function() {
+                statusDiv.textContent = '✗ 显示失败';
+                statusDiv.className = 'status error';
+                console.error(`✗ ${name} 头像显示失败`);
+            };
+
+            avatarContainer.appendChild(img);
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'math-name';
+            nameDiv.textContent = name;
+
+            const statusDiv = document.createElement('div');
+            statusDiv.className = 'status';
+            statusDiv.textContent = '加载中...';
+
+            testItem.appendChild(avatarContainer);
+            testItem.appendChild(nameDiv);
+            testItem.appendChild(statusDiv);
+
+            testResultsDiv.appendChild(testItem);
+        });
+
+        console.log('开始测试头像显示...');
+    </script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+*.egg-info/
+dist/
+build/
+
+# 系统文件
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 项目特定
+*.db
+.env
+data/
+backend/app.log
+*.zip
+
+# 测试和临时文件
+test_*.py
+check_*.py
+demo_*.py
+verify_*.py
+direct_*.py
+quick_*.py
+prepare_deploy.py
+*_backup.py
+
+# 多余的中文文档文件
+使用说明.md
+功能对照表.txt
+启动.bat
+启动.sh
+完成说明.md
+完成说明.txt
+快速启动.md
+快速部署.txt
+数据库更新记录.md
+简化部署指南.txt
+部署指南.md
+部署清单.txt
+
+# Claude配置
+.claude/
+
+# 部署相关
+mathematicians-search-deploy.zip
